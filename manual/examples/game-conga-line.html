@@ -56,6 +56,15 @@
       height: 80px;
       display: block;
     }
+    #score {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      padding: 4px 8px;
+      color: white;
+      font-family: monospace;
+      background: rgba(0, 0, 0, 0.5);
+    }
     #loading {
       position: absolute;
       left: 0;
@@ -140,6 +149,7 @@
       <div style="flex: 0 0 40px;"></div>
       <div id="right"><img src="resources/images/right.svg"></div>
     </div>
+    <div id="score">Animals: 0</div>
     <div id="loading">
       <div>
         <div>...loading...</div>
@@ -686,11 +696,12 @@ function main() {
 
 	}
 
-	const gui = new GUI();
-	gui.add( globals, 'debug' ).onChange( showHideDebugInfo );
+const gui = new GUI();
+gui.add( globals, 'debug' ).onChange( showHideDebugInfo );
 
-	const labelContainerElem = document.querySelector( '#labels' );
-	function showHideDebugInfo() {
+const labelContainerElem = document.querySelector( '#labels' );
+const scoreElem = document.querySelector( '#score' );
+function showHideDebugInfo() {
 
 		labelContainerElem.style.display = globals.debug ? '' : 'none';
 
@@ -1011,7 +1022,7 @@ function main() {
 	}
 
 	let then = 0;
-	function render( now ) {
+        function render( now ) {
 
 		// convert to seconds
 		globals.time = now * 0.001;
@@ -1027,8 +1038,9 @@ function main() {
 
 		}
 
-		gameObjectManager.update();
-		inputManager.update();
+                gameObjectManager.update();
+                inputManager.update();
+                updateScore();
 
 		renderer.render( scene, camera );
 
@@ -1038,6 +1050,10 @@ function main() {
 
 	requestAnimationFrame( render );
 
+}
+
+function updateScore() {
+  scoreElem.textContent = `Animals: ${globals.congaLine.length - 1}`;
 }
 
 main();
