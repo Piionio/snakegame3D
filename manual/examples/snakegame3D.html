@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Snake Game 3D</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #c {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="info"></div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../../build/three.module.js",
+      "three/addons/": "../../examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+    const canvas = document.querySelector('#c');
+    const renderer = new THREE.WebGLRenderer({canvas});
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x20252f);
+
+    const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 100);
+    camera.position.set(0, 20, 20);
+    const controls = new OrbitControls(camera, canvas);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 10, 10);
+    scene.add(light);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
+
+    const boardSize = 20;
+    const tileSize = 1;
+    const half = boardSize / 2;
+
+    const boardGeo = new THREE.PlaneGeometry(boardSize, boardSize);
+    const boardMat = new THREE.MeshPhongMaterial({color: 0x004400});
+    const board = new THREE.Mesh(boardGeo, boardMat);
+    board.rotation.x = -Math.PI / 2;
+    scene.add(board);
+
+    const snakeMat = new THREE.MeshPhongMaterial({color: 0x00ff00});
+    const foodMat = new THREE.MeshPhongMaterial({color: 0xff0000});
+    const cubeGeo = new THREE.BoxGeometry(tileSize, tileSize, tileSize);
+
+    let snake = [{x:0, z:0}];
+    let direction = {x:1, z:0};
+    let food = spawnFood();
+    let segments = [];
+    let foodMesh = null;
+    const infoElem = document.querySelector('#info');
+
+    function spawnFood() {
+      return {
+        x: Math.floor((Math.random()*boardSize) - half + 0.5),
+        z: Math.floor((Math.random()*boardSize) - half + 0.5)
+      };
+    }
+
+    function updateMeshes() {
+      segments.forEach(m => scene.remove(m));
+      segments = snake.map(s => {
+        const m = new THREE.Mesh(cubeGeo, snakeMat);
+        m.position.set(s.x, tileSize/2, s.z);
+        scene.add(m);
+        return m;
+      });
+      if (foodMesh) scene.remove(foodMesh);
+      foodMesh = new THREE.Mesh(cubeGeo, foodMat);
+      foodMesh.position.set(food.x, tileSize/2, food.z);
+      scene.add(foodMesh);
+    }
+
+    const keyStates = {};
+    window.addEventListener('keydown', e => keyStates[e.code]=true);
+    window.addEventListener('keyup', e => keyStates[e.code]=false);
+
+    function step() {
+      if (keyStates['ArrowUp'] && direction.z !== 1) { direction = {x:0,z:-1}; }
+      if (keyStates['ArrowDown'] && direction.z !== -1) { direction = {x:0,z:1}; }
+      if (keyStates['ArrowLeft'] && direction.x !== 1) { direction = {x:-1,z:0}; }
+      if (keyStates['ArrowRight'] && direction.x !== -1) { direction = {x:1,z:0}; }
+
+      const head = {...snake[0]};
+      head.x += direction.x;
+      head.z += direction.z;
+
+      if (head.x > half-1 || head.x < -half || head.z > half-1 || head.z < -half) {
+        reset();
+        return;
+      }
+
+      for (let i=0;i<snake.length;i++) {
+        if (snake[i].x === head.x && snake[i].z === head.z) {
+          reset();
+          return;
+        }
+      }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.z === food.z) {
+        food = spawnFood();
+      } else {
+        snake.pop();
+      }
+      updateMeshes();
+      infoElem.textContent = `Length: ${snake.length}`;
+    }
+
+    function reset() {
+      snake = [{x:0,z:0}];
+      direction = {x:1,z:0};
+      food = spawnFood();
+      updateMeshes();
+    }
+
+    function render(time) {
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+      camera.aspect = canvas.clientWidth / canvas.clientHeight;
+      camera.updateProjectionMatrix();
+
+      requestAnimationFrame(render);
+    }
+
+    updateMeshes();
+    requestAnimationFrame(render);
+    setInterval(step, 200);
+  </script>
+</body>
+</html>
