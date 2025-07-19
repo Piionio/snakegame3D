@@ -72,6 +72,9 @@
     let food = spawnFood();
     let segments = [];
     let foodMesh = null;
+    let highScore = 1;
+    let speed = 200;
+    let timeoutId;
     const infoElem = document.querySelector('#info');
 
     function spawnFood() {
@@ -128,14 +131,22 @@
         snake.pop();
       }
       updateMeshes();
-      infoElem.textContent = `Length: ${snake.length}`;
+      if (snake.length > highScore) highScore = snake.length;
+      infoElem.textContent = `Length: ${snake.length}  High Score: ${highScore}`;
+      speed = Math.max(50, 200 - snake.length * 5);
+      timeoutId = setTimeout(step, speed);
     }
 
     function reset() {
+      if (snake.length > highScore) highScore = snake.length;
+      speed = 200;
+      clearTimeout(timeoutId);
       snake = [{x:0,z:0}];
       direction = {x:1,z:0};
       food = spawnFood();
       updateMeshes();
+      infoElem.textContent = `Length: ${snake.length}  High Score: ${highScore}`;
+      timeoutId = setTimeout(step, speed);
     }
 
     function render(time) {
@@ -148,7 +159,7 @@
 
     updateMeshes();
     requestAnimationFrame(render);
-    setInterval(step, 200);
+    reset();
   </script>
 </body>
 </html>
